@@ -486,7 +486,7 @@ accuracy</code></pre>
 <pre class="r"><code>oose &lt;- 1 - as.numeric(confusionMatrix(validating$classe, p)$overall[1])
 oose</code></pre>
 <pre><code>## [1] 0.008326253</code></pre>
-<p>So, the estimated accuracy of the model is 99.17% and the estimated out-of-sample error is 0.83%.</p>
+<p>So, the estimated accuracy of the model is 99.17% and the estimated out-of-sample error is 0.83%. I have chosen Random forest due to several factors: 1) you can get feature importance; 2) it is a robust method; 3) you need not care about distribution; 4) if you alter your RF well, it will not be very time-consuming.</p>
 </div>
 <div id="predicting-for-test-data-set" class="section level2">
 <h2>Predicting for Test Data Set</h2>

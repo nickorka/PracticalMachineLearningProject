@@ -99,6 +99,7 @@ oose <- 1 - as.numeric(confusionMatrix(validating$classe, p)$overall[1])
 oose
 ```
 So, the estimated accuracy of the model is 99.17% and the estimated out-of-sample error is 0.83%.
+I have chosen Random forest due to several factors: 1) you can get feature importance; 2) it is a robust method; 3) you need not care about distribution; 4) if you alter your RF well, it will not be very time-consuming.
 
 ## Predicting for Test Data Set
 Now, we apply the model to the original testing data set downloaded from the data source. 
