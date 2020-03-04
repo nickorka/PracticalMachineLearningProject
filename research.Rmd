@@ -1,0 +1,85 @@
+---
+title: "Practical Machine Learining Class Project"
+author: "Nick Orka"
+date: "3/3/2020"
+output: 
+    html_document:
+        fig_height: 8
+        fig_width: 8
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. A goal of the project is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and to predict the manner in which they did the exercise. This is the "classe" variable in the training set.
+
+## Data preprocessing
+The training data for this project are available here:  
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:  
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source:   http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. 
+```{r, cache=T, echo=F, warning=F}
+library(caret)
+```
+```{r, cache = T, echo = F}
+trainUrl <-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+trainFile <- "./data/pml-training.csv"
+testFile  <- "./data/pml-testing.csv"
+if (!file.exists("./data")) {
+  dir.create("./data")
+}
+if (!file.exists(trainFile)) {
+  download.file(trainUrl, destfile=trainFile, method="curl")
+}
+if (!file.exists(testFile)) {
+  download.file(testUrl, destfile=testFile, method="curl")
+}
+training <- read.csv("./data/pml-training.csv")
+testing <- read.csv("./data/pml-testing.csv")
+```
+### Data summary
+The initial data have NA data that required to be cleaned:
+```{r, cache=T}
+dim(training)
+dim(testing)
+```
+### Cleaning data
+Cleaned data:
+```{r, cache=T}
+var_names <- names(training)
+naNames <- names(training[, colSums(is.na(training)) > 0])
+var_names <- var_names[!var_names %in% naNames]
+var_names <- var_names[!grepl("X|timestamp|window", var_names)]
+training <- training[, var_names]
+classe <- training$classe
+training <- training[, sapply(training, is.numeric)]
+var_names <- names(training)
+training$classe <- classe
+testing <- testing[, var_names]
+dim(training)
+dim(testing)
+```
+### Create validation dataset
+```{r, cache=T}
+set.seed(34562)
+isTrain <- createDataPartition(training$classe, p = .7, list = F)
+validating <- training[-isTrain, ]
+training <- training[isTrain,]
+dim(validating)
+dim(training)
+```
+## Prediction model
+```{r, cache=T}
+control <- trainControl(method = "cv", 5)
+model <- train(classe ~ ., data = training, method = "rf", trControl = control, ntree = 250)
+model
+```
+
