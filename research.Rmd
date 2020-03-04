@@ -27,6 +27,11 @@ https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 The data for this project come from this source:   http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. 
 ```{r, cache=T, echo=F, warning=F}
 library(caret)
+library(corrplot)
+library(rattle)
+library(randomForest)
+# devtools::install_github("MI2DataLab/randomForestExplainer")
+library(randomForestExplainer)
 ```
 ```{r, cache = T, echo = F}
 trainUrl <-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
@@ -78,8 +83,58 @@ dim(training)
 ```
 ## Prediction model
 ```{r, cache=T}
-control <- trainControl(method = "cv", 5)
-model <- train(classe ~ ., data = training, method = "rf", trControl = control, ntree = 250)
+control <- caret::trainControl(method = "cv", 5)
+model <- caret::train(classe ~ ., data = training, method = "rf", trControl = control, ntree = 250, localImp = TRUE)
 model
 ```
+Then, we estimate the performance of the model on the validation data set.  
+```{r, cache = T}
+p <- predict(model, validating)
+confusionMatrix(validating$classe, p)
+```
+```{r, cache = T}
+accuracy <- postResample(p, validating$classe)
+accuracy
+oose <- 1 - as.numeric(confusionMatrix(validating$classe, p)$overall[1])
+oose
+```
+So, the estimated accuracy of the model is 99.17% and the estimated out-of-sample error is 0.83%.
+
+## Predicting for Test Data Set
+Now, we apply the model to the original testing data set downloaded from the data source. 
+```{r, cache = T}
+result <- predict(model, testing)
+result
+```  
+
+## Appendix: Figures
+```{r, cache=T, echo=F}
+min_depth_frame <- min_depth_distribution(model$finalModel)
+importance_frame <- measure_importance(model$finalModel)
+vars <- important_variables(model$finalModel, k = 5, measures = c("mean_min_depth", "no_of_trees"))
+#interactions_frame <- min_depth_interactions(model$finalModel, vars)
+```
+
+### 1. Variable importance
+```{r, cache=T, echo=F}
+varImpPlot(model$finalModel, main = "Variable Importance of RF model")
+plot_multi_way_importance(importance_frame, y_measure = "accuracy_decrease", x_measure = "mean_min_depth", size_measure = "p_value", no_of_labels = 5)
+plot_importance_ggpairs(importance_frame)
+```
+
+### 2. Correlation Matrix Visualization  
+
+```{r, cache = T, echo=F}
+corrPlot <- cor(training[, -(length(var_names) + 1)])
+corrplot(corrPlot, method="color")
+```
+
+### 3. Decision Tree Visualization
+
+```{r, cache = T, echo=F}
+modFitTree <- train(classe ~ ., data=training, method="rpart")
+fancyRpartPlot(modFitTree$finalModel)
+plot_min_depth_distribution(min_depth_frame)
+```
+
 
